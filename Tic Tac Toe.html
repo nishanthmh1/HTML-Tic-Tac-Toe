@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic Tac Toe</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    flex-direction: column;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+    gap: 2px;
+  }
+  .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #eee;
+    border: 1px solid #aaa;
+    cursor: pointer;
+    font-size: 2em;
+  }
+  #message {
+    text-align: center;
+    margin-top: 20px;
+  }
+  #restart {
+    background-color: #ff6347;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    cursor: pointer;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+<div class="board"></div>
+<div id="message"></div>
+<button id="restart">Restart</button>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const board = document.querySelector('.board');
+  const messageDiv = document.getElementById('message');
+  const restartButton = document.getElementById('restart');
+  let currentPlayer = 'X';
+  let gameOver = false;
+  
+  // Create board cells
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement('div');
+    cell.classList.add('cell');
+    cell.dataset.index = i;
+    cell.addEventListener('click', handleCellClick);
+    board.appendChild(cell);
+  }
+  
+  // Handle cell click
+  function handleCellClick(event) {
+    if (gameOver) return;
+    const cell = event.target;
+    if (!cell.textContent) {
+      cell.textContent = currentPlayer;
+      if (checkWin()) {
+        gameOver = true;
+        messageDiv.textContent = currentPlayer + ' wins!';
+      } else if (checkDraw()) {
+        gameOver = true;
+        messageDiv.textContent = 'It\'s a draw!';
+      } else {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        if (currentPlayer === 'O') {
+          setTimeout(aiMove, 500); // AI move after a delay
+        }
+      }
+    }
+  }
+  
+  // Check for a win
+  function checkWin() {
+    const lines = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+    for (let line of lines) {
+      const [a, b, c] = line;
+      if (board.children[a].textContent &&
+          board.children[a].textContent === board.children[b].textContent &&
+          board.children[a].textContent === board.children[c].textContent) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  // Check for a draw
+  function checkDraw() {
+    for (let cell of board.children) {
+      if (!cell.textContent) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  // AI move (minimax algorithm)
+  function aiMove() {
+    if (gameOver) return;
+    const emptyCells = [...board.children].filter(cell => !cell.textContent);
+    const bestMove = findBestMove(emptyCells);
+    const aiCell = board.children[bestMove];
+    aiCell.textContent = currentPlayer;
+    if (checkWin()) {
+      gameOver = true;
+      messageDiv.textContent = currentPlayer + ' wins!';
+    } else if (checkDraw()) {
+      gameOver = true;
+      messageDiv.textContent = 'It\'s a draw!';
+    } else {
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    }
+  }
+  
+  // Minimax algorithm to find the best move
+  function findBestMove(emptyCells) {
+    let bestScore = -Infinity;
+    let bestMove;
+    for (let i = 0; i < emptyCells.length; i++) {
+      const cell = emptyCells[i];
+      cell.textContent = 'O'; // Assume AI's move
+      const score = minimax(board.children, 0, false);
+      cell.textContent = ''; // Undo AI's move
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = cell.dataset.index;
+      }
+    }
+    return bestMove;
+  }
+  
+  function minimax(boardCells, depth, isMaximizing) {
+    if (checkWin()) {
+      return isMaximizing ? -1 : 1; // AI wins if maximizing
+    } else if (checkDraw()) {
+      return 0;
+    }
+  
+    if (isMaximizing) {
+      let bestScore = -Infinity;
+      for (let i = 0; i < boardCells.length; i++) {
+        const cell = boardCells[i];
+        if (!cell.textContent) {
+          cell.textContent = 'O';
+          const score = minimax(boardCells, depth + 1, false);
+          cell.textContent = '';
+          bestScore = Math.max(score, bestScore);
+        }
+      }
+      return bestScore;
+    } else {
+      let bestScore = Infinity;
+      for (let i = 0; i < boardCells.length; i++) {
+        const cell = boardCells[i];
+        if (!cell.textContent) {
+          cell.textContent = 'X';
+          const score = minimax(boardCells, depth + 1, true);
+          cell.textContent = '';
+          bestScore = Math.min(score, bestScore);
+        }
+      }
+      return bestScore;
+    }
+  }
+  
+  // Restart game
+  restartButton.addEventListener('click', function() {
+    currentPlayer = 'X';
+    gameOver = false;
+    messageDiv.textContent = '';
+    for (let cell of board.children) {
+      cell.textContent = '';
+    }
+  });
+});
+</script>
+</body>
+</html>
